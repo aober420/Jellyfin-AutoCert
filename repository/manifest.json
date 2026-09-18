@@ -1,0 +1,20 @@
+[
+  {
+    "guid": "6bb00c9d-9031-496b-85f3-e8262c547f35",
+    "name": "AutoCert",
+    "overview": "Automatic HTTPS certificates with GoDaddy, Cloudflare, or DigitalOcean DNS verification.",
+    "description": "Obtain and renew Let's Encrypt certificates, generate password-protected PFX files, and update Jellyfin HTTPS settings. Supports GoDaddy API key/secret or PAT. Initial test release: begin with staging.",
+    "owner": "aober420",
+    "category": "General",
+    "versions": [
+      {
+        "version": "0.2.0.0",
+        "changelog": "Adds GoDaddy classic API key and secret authentication. Includes automatic renewal, PFX password rotation, optional restart, and rollback.",
+        "targetAbi": "12.1.0.0",
+        "sourceUrl": "https://github.com/aober420/jellyfin-plugin-autocert/releases/download/v0.2.0/AutoCert_0.2.0.0.zip",
+        "checksum": "285cdf92e985106dccfa7795e85e234e",
+        "timestamp": "2026-09-18T16:31:55Z"
+      }
+    ]
+  }
+]
