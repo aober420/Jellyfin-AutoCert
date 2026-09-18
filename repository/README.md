@@ -3,7 +3,7 @@
 Add this URL under Jellyfin Dashboard > Plugins > Repositories:
 
 ```text
-https://raw.githubusercontent.com/aober420/jellyfin-plugin-autocert/main/repository/manifest.json
+https://raw.githubusercontent.com/aober420/Jellyfin-AutoCert/main/repository/manifest.json
 ```
 
 Open Catalog, install AutoCert, restart Jellyfin, and configure the plugin under My Plugins.
