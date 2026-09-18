@@ -20,9 +20,11 @@ Choose the **authoritative DNS host**, which can differ from the company that so
 Requires Jellyfin 12.1 or later in the compatible 12.x series. This is an initial test release; use staging mode before issuing production certificates.
 
 1. Open **Dashboard > Plugins > Repositories** and add a repository named **AutoCert**.
-2. Paste this repository URL:
+2. Click the copy button in the upper-right corner of this URL box, then paste it into Jellyfin’s **Repository URL** field:
 
-   `https://raw.githubusercontent.com/aober420/jellyfin-plugin-autocert/main/repository/manifest.json`
+   ```text
+   https://raw.githubusercontent.com/aober420/jellyfin-plugin-autocert/main/repository/manifest.json
+   ```
 
 3. Save, open **Catalog**, select **AutoCert**, and install version **0.2.0.0**.
 4. Restart Jellyfin, then open **My Plugins > AutoCert** to configure your domain and DNS credentials.
