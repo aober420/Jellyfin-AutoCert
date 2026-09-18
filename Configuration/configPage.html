@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html><head><title>AutoCert</title></head><body>
+<div id="AutoCertPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
+ <div data-role="content"><div class="content-primary" style="max-width:58em">
+  <h1>AutoCert</h1>
+  <p>Automatic Let's Encrypt certificates for Jellyfin. Choose the service that hosts your DNS records, which may differ from your domain registrar.</p>
+  <form id="autoCertForm">
+   <label class="checkboxContainer"><input is="emby-checkbox" id="enabled" type="checkbox"><span>Enable automatic certificate management</span></label>
+   <div class="inputContainer"><label class="inputLabel" for="domain">Jellyfin domain</label><input is="emby-input" id="domain" required placeholder="jellyfin.example.com"><div class="fieldDescription">One hostname, without https:// or a port. Wildcards are not supported in this version.</div></div>
+   <div class="inputContainer"><label class="inputLabel" for="email">Let's Encrypt account email</label><input is="emby-input" id="email" required type="email" autocomplete="email"></div>
+   <div class="selectContainer"><label class="selectLabel" for="provider">DNS provider</label><select is="emby-select" id="provider"><option value="GoDaddy">GoDaddy</option><option value="Cloudflare">Cloudflare</option><option value="DigitalOcean">DigitalOcean</option></select></div>
+   <div class="inputContainer"><label class="inputLabel" for="zone">DNS zone</label><input is="emby-input" id="zone" required placeholder="example.com"><div class="fieldDescription">The zone containing this hostname. Your existing DNS records are preserved.</div></div>
+   <div class="inputContainer" id="cloudflareFields" hidden><label class="inputLabel" for="cloudflareZoneId">Cloudflare zone ID</label><input is="emby-input" id="cloudflareZoneId" autocomplete="off"><div class="fieldDescription">Available on your Cloudflare domain overview page.</div></div>
+   <div id="godaddyAuthFields" class="selectContainer"><label class="selectLabel" for="goDaddyAuthMode">GoDaddy authentication</label><select is="emby-select" id="goDaddyAuthMode"><option value="Classic">API key and secret</option><option value="PAT">Personal access token (PAT)</option></select></div>
+   <div id="classicFields" hidden>
+    <div class="inputContainer"><label class="inputLabel" for="apiKey">GoDaddy API key</label><input is="emby-input" id="apiKey" type="password" autocomplete="new-password" placeholder="Production API key"></div>
+    <div class="inputContainer"><label class="inputLabel" for="apiSecret">GoDaddy API secret</label><input is="emby-input" id="apiSecret" type="password" autocomplete="new-password" placeholder="Production API secret"><div class="fieldDescription">Enter both fields together. Leave both blank to keep the saved pair. Use Production credentials, including for staging certificate tests.</div></div>
+   </div>
+   <div id="tokenFields" class="inputContainer"><label class="inputLabel" id="tokenLabel" for="token">API token</label><input is="emby-input" id="token" type="password" autocomplete="new-password" placeholder="Enter a token; leave blank to keep the saved token"></div><div id="providerHelp" class="fieldDescription"></div><div id="tokenStatus" class="fieldDescription" style="margin-bottom:1em"></div>
+   <label class="checkboxContainer"><input is="emby-checkbox" id="useStaging" type="checkbox"><span>Test with Let's Encrypt staging first</span></label>
+   <p class="fieldDescription">Staging creates a test certificate but never installs it in Jellyfin. After a successful test, turn staging off, save, and check again to obtain a trusted certificate.</p>
+   <label class="checkboxContainer"><input is="emby-checkbox" id="acceptTerms" type="checkbox"><span>I accept the Let's Encrypt subscriber agreement for this server</span></label>
+   <p><a href="https://letsencrypt.org/repository/" target="_blank" rel="noopener noreferrer">Read the current subscriber agreement</a></p>
+   <h2>Renewal and installation</h2>
+   <div class="inputContainer"><label class="inputLabel" for="renewBeforeDays">Renew when this many days remain</label><input is="emby-input" id="renewBeforeDays" required type="number" min="1" max="30"><div class="fieldDescription">Checked every 12 hours by Jellyfin's scheduled task. For shorter certificates, renewal begins with one-third of the lifetime remaining.</div></div>
+   <div class="inputContainer"><label class="inputLabel" for="propagationSeconds">Wait for DNS updates (seconds)</label><input is="emby-input" id="propagationSeconds" required type="number" min="30" max="3600"><div class="fieldDescription">Start with 600 seconds for GoDaddy. Increase this if verification runs before your TXT record becomes visible.</div></div>
+   <label class="checkboxContainer"><input is="emby-checkbox" id="rotatePassword" type="checkbox"><span>Generate a new PFX password with every renewal</span></label>
+   <div class="inputContainer" id="passwordFields"><label class="inputLabel" for="password">Fixed PFX password (optional)</label><input is="emby-input" id="password" type="password" minlength="12" autocomplete="new-password" placeholder="Leave blank to keep or generate a password"><div class="fieldDescription">Used only when password rotation is off. Jellyfin's certificate path and password are updated automatically.</div></div>
+   <label class="checkboxContainer"><input is="emby-checkbox" id="autoRestart" type="checkbox"><span>Restart Jellyfin automatically after installation</span></label>
+   <p class="fieldDescription">A restart loads the new certificate and interrupts playback. Leave this off to restart manually. Automatic restarts depend on your Jellyfin service or container supporting Jellyfin's restart command.</p>
+   <button is="emby-button" type="submit" class="raised button-submit block"><span>Save settings</span></button>
+  </form>
+  <h2>Certificate status</h2>
+  <div id="status" role="status" aria-live="polite" style="white-space:pre-wrap;margin-bottom:1em">Loading...</div>
+  <div style="display:flex;flex-wrap:wrap;gap:.6em">
+   <button is="emby-button" id="test" type="button" class="raised">Test DNS access</button>
+   <button is="emby-button" id="check" type="button" class="raised">Check / issue certificate</button>
+   <button is="emby-button" id="refresh" type="button" class="raised">Refresh status</button>
+   <button is="emby-button" id="rollback" type="button" class="raised">Restore previous settings</button>
+  </div>
+  <p class="fieldDescription">Save changes before testing or issuing. Certificates are stored privately in Jellyfin's data directory. This plugin runs only while Jellyfin is running.</p>
+  <div id="notice" role="status" aria-live="polite" style="white-space:pre-wrap;margin-top:1em"></div>
+ </div></div>
+ <script type="text/javascript">
+ (function () {
+  const page = document.querySelector('#AutoCertPage');
+  const el = id => page.querySelector('#' + id);
+  const textFields = ['domain','email','provider','goDaddyAuthMode','zone','cloudflareZoneId'];
+  const boolFields = ['enabled','useStaging','acceptTerms','rotatePassword','autoRestart'];
+  const numberFields = ['renewBeforeDays','propagationSeconds'];
+  let timer;
+  let savedProvider;
+  function request(path, method, data, json) {
+   const options = { url: ApiClient.getUrl('AutoCert/' + path), type: method || 'GET' };
+   if (json || !method || method === 'GET') options.dataType = 'json';
+   if (data !== undefined) { options.contentType = 'application/json'; options.data = JSON.stringify(data); }
+   return ApiClient.ajax(options);
+  }
+  async function error(err) {
+   let message = 'Request failed. Check Jellyfin connection and administrator permissions.';
+   try { const data = await err.json(); message = data.message || data.Message || message; } catch (_) {}
+   el('notice').textContent = message;
+  }
+  function providerChanged() {
+   const provider = el('provider').value;
+   el('cloudflareFields').hidden = provider !== 'Cloudflare';
+   el('godaddyAuthFields').hidden = provider !== 'GoDaddy';
+   const classic = provider === 'GoDaddy' && el('goDaddyAuthMode').value === 'Classic';
+   el('classicFields').hidden = !classic; el('tokenFields').hidden = classic;
+   el('tokenLabel').textContent = provider === 'GoDaddy' ? 'GoDaddy personal access token (PAT)' : provider + ' API token';
+   el('providerHelp').textContent = {
+    GoDaddy: classic ? 'Use the API key and secret from the GoDaddy developer API Keys page. The zone must use GoDaddy DNS. Avoid concurrent certificate clients using the same challenge name.' : 'Use a production v3 PAT with domains.domain:read and domains.dns:update. The zone must use GoDaddy DNS.',
+    Cloudflare: 'Use an API token restricted to this zone with Zone DNS Edit and Zone Read permissions.',
+    DigitalOcean: 'Use a personal access token with domain record read, create, and delete permissions.'
+   }[provider];
+   if (provider !== savedProvider) el('tokenStatus').textContent = 'Save a token for this provider, or leave blank if you previously saved one.';
+  }
+  function passwordChanged() { el('passwordFields').hidden = el('rotatePassword').checked; }
+  async function refresh() {
+   const s = await request('status');
+   el('status').textContent = [s.activity, s.message, s.domain ? 'Domain: ' + s.domain : '', s.expires ? 'Expires: ' + new Date(s.expires).toLocaleString() : '', s.lastAttempt ? 'Last attempt: ' + new Date(s.lastAttempt).toLocaleString() : '', s.path ? 'PFX: ' + s.path : '', s.pendingDnsCleanup ? 'DNS cleanup is pending; the next enabled run will retry it.' : '', s.restartRequired ? 'Jellyfin reports a restart is required.' : ''].filter(Boolean).join('\n');
+   el('rollback').disabled = !s.hasBackup;
+   if (el('provider').value === savedProvider) el('tokenStatus').textContent = (el('provider').value === 'GoDaddy' && el('goDaddyAuthMode').value === 'Classic') ? (s.hasClassicCredentials ? 'An API key and secret pair is saved.' : 'No API key and secret pair saved.') : (s.hasToken ? 'A token is saved for this provider.' : 'No token saved for this provider.');
+  }
+  async function load() {
+   const c = await request('settings');
+   textFields.forEach(id => el(id).value = c[id] || '');
+   boolFields.forEach(id => el(id).checked = !!c[id]);
+   numberFields.forEach(id => el(id).value = c[id]);
+   savedProvider = c.provider;
+   el('token').value = ''; el('password').value = ''; el('apiKey').value = ''; el('apiSecret').value = '';
+   providerChanged(); passwordChanged(); await refresh();
+  }
+  page.addEventListener('viewshow', function () { load().catch(error); clearInterval(timer); timer = setInterval(() => refresh().catch(error), 10000); });
+  page.addEventListener('viewhide', function () { clearInterval(timer); el('token').value = ''; el('password').value = ''; el('apiKey').value = ''; el('apiSecret').value = ''; });
+  el('provider').addEventListener('change', function () { el('token').value = ''; providerChanged(); });
+  el('goDaddyAuthMode').addEventListener('change', function () { providerChanged(); refresh().catch(error); });
+  el('rotatePassword').addEventListener('change', passwordChanged);
+  el('autoCertForm').addEventListener('submit', async function (event) {
+   event.preventDefault();
+   const settings = {};
+   textFields.forEach(id => settings[id] = el(id).value.trim());
+   boolFields.forEach(id => settings[id] = el(id).checked);
+   numberFields.forEach(id => settings[id] = Number(el(id).value));
+   try { await request('settings', 'POST', { settings, token: el('token').value, password: el('password').value, apiKey: el('apiKey').value, apiSecret: el('apiSecret').value }); savedProvider = settings.provider; el('token').value = ''; el('password').value = ''; el('apiKey').value = ''; el('apiSecret').value = ''; el('notice').textContent = 'Settings saved.'; await refresh(); } catch (err) { await error(err); }
+  });
+  el('test').addEventListener('click', async function () { el('test').disabled = true; try { const r = await request('test', 'POST', undefined, true); el('notice').textContent = r.message; } catch (err) { await error(err); } finally { el('test').disabled = false; } });
+  el('check').addEventListener('click', async function () { try { await request('check', 'POST'); el('notice').textContent = 'Certificate check queued. Status refreshes automatically. Initial DNS verification can take several minutes.'; await refresh(); } catch (err) { await error(err); } });
+  el('refresh').addEventListener('click', () => refresh().catch(error));
+  el('rollback').addEventListener('click', async function () { if (!window.confirm('Restore the previous certificate settings and disable AutoCert? Restart Jellyfin afterward to apply.')) return; try { await request('rollback', 'POST'); await load(); } catch (err) { await error(err); } });
+ }());
+ </script>
+</div></body></html>

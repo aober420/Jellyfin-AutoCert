@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Version>0.2.0</Version>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Jellyfin.Controller" Version="12.1.0" ExcludeAssets="runtime" />
+    <PackageReference Include="Certes" Version="3.0.4" />
+    <EmbeddedResource Include="Configuration/configPage.html" />
+    <Compile Remove="tests/**/*.cs" />
+  </ItemGroup>
+</Project>

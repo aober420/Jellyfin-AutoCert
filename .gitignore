@@ -1,0 +1,8 @@
+bin/
+obj/
+tests/bin/
+tests/obj/
+TestResults/
+*.pfx
+*.key
+*.protected
