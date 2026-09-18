@@ -1,3 +1,5 @@
+![AutoCert logo](assets/autocert-logo.png)
+
 # AutoCert for Jellyfin 12.1
 
 AutoCert obtains Let's Encrypt certificates using DNS verification, packages the private key and chain into a password-protected PFX, and updates Jellyfin's HTTPS settings. Each server owner supplies their own domain and DNS credentials through the plugin's configuration page.
@@ -117,4 +119,5 @@ License: GPL-3.0-only for the plugin source. See `THIRD-PARTY-NOTICES.md` for bu
 Stop Jellyfin. Move the old AutoCert plugin folder out of the plugins directory and keep it as a backup, then copy in `AutoCert_0.2.0.0` and start Jellyfin. Do not leave both plugin versions installed. Keep the existing plugin XML configuration and `<Jellyfin data>/autocert` directory. Select GoDaddy, choose **API key and secret**, enter both production values, save, and test DNS access. Use a staging issuance before relying on production renewal.
 
 Version 0.2.0 adds six tests for classic authentication, TXT value preservation, already-absent records, and unexpected name rejection (26 passing cases total). An isolated Jellyfin 12.1 check also verified classic credential saving, rejection of a partial pair, settings redaction, and delivery of the new fields. No live DNS credentials were used. Classic keys remain subject to GoDaddy account/API eligibility and its legacy API lifecycle.
+
 

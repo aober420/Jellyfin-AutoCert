@@ -15,6 +15,7 @@
         "checksum": "285cdf92e985106dccfa7795e85e234e",
         "timestamp": "2026-09-18T16:31:55Z"
       }
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/aober420/jellyfin-plugin-autocert/main/assets/autocert-logo.png"
   }
 ]
