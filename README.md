@@ -4,7 +4,7 @@
 
 AutoCert obtains Let's Encrypt certificates using DNS verification, packages the private key and chain into a password-protected PFX, and updates Jellyfin's HTTPS settings. Each server owner supplies their own domain and DNS credentials through the plugin's configuration page.
 
-**Version 0.2.1 — initial test release.** Built for Jellyfin **12.1.0 / .NET 10**. The release builds and passes automated tests and an isolated Jellyfin 12.1 startup/API smoke test. Live DNS issuance and automatic service restart have not been tested with provider accounts. Use staging before enabling production issuance.
+**Version 0.2.2 — initial test release.** Built for Jellyfin **12.1.0 / .NET 10**. The release builds and passes automated tests and an isolated Jellyfin 12.1 startup/API smoke test. Live DNS issuance and automatic service restart have not been tested with provider accounts. Use staging before enabling production issuance.
 
 ## Providers
 
@@ -28,16 +28,16 @@ Requires Jellyfin 12.1 or later in the compatible 12.x series. This is an initia
    https://raw.githubusercontent.com/aober420/Jellyfin-AutoCert/main/repository/manifest.json
    ```
 
-3. Save, open **Catalog**, select **AutoCert**, and install version **0.2.1.0**.
+3. Save, open **Catalog**, select **AutoCert**, and install version **0.2.2.0**.
 4. Restart Jellyfin, then open **My Plugins > AutoCert** to configure your domain and DNS credentials.
 
-Release downloads are available at [GitHub Releases](https://github.com/aober420/Jellyfin-AutoCert/releases). `AutoCert_0.2.1.0.zip` is the catalog package: its DLLs are at the ZIP root because Jellyfin creates the plugin directory. `AutoCert-0.2.1-Jellyfin-12.1.zip` is the manual installation package described below.
+Release downloads are available at [GitHub Releases](https://github.com/aober420/Jellyfin-AutoCert/releases). `AutoCert_0.2.2.0.zip` is the catalog package: its DLLs are at the ZIP root because Jellyfin creates the plugin directory. `AutoCert-0.2.2-Jellyfin-12.1.zip` is the manual installation package described below.
 
 ## Manual installation on Windows
 
-1. Extract the installation ZIP. It contains an `AutoCert_0.2.1.0` folder.
+1. Extract the installation ZIP. It contains an `AutoCert_0.2.2.0` folder.
 2. Find your actual Jellyfin data/plugins directory using the server's dashboard paths. A typical Windows service install uses `C:\ProgramData\Jellyfin\Server\plugins`, but portable/custom installations differ.
-3. Stop Jellyfin and copy the entire `AutoCert_0.2.1.0` folder into that plugins directory, including its dependency DLLs. Do not copy the source ZIP or `.cs` files there.
+3. Stop Jellyfin and copy the entire `AutoCert_0.2.2.0` folder into that plugins directory, including its dependency DLLs. Do not copy the source ZIP or `.cs` files there.
 4. Start Jellyfin. Open **Dashboard → Plugins → My Plugins → AutoCert**.
 
 The public catalog uses the repository URL above. Installing or upgrading requires a Jellyfin restart. Live DNS issuance has not yet been validated with provider accounts; start with staging.
@@ -116,10 +116,12 @@ License: GPL-3.0-only for the plugin source. See `THIRD-PARTY-NOTICES.md` for bu
 
 ## Upgrade from 0.1.0
 
-Stop Jellyfin. Move the old AutoCert plugin folder out of the plugins directory and keep it as a backup, then copy in `AutoCert_0.2.1.0` and start Jellyfin. Do not leave both plugin versions installed. Keep the existing plugin XML configuration and `<Jellyfin data>/autocert` directory. Select GoDaddy, choose **API key and secret**, enter both production values, save, and test DNS access. Use a staging issuance before relying on production renewal.
+Stop Jellyfin. Move the old AutoCert plugin folder out of the plugins directory and keep it as a backup, then copy in `AutoCert_0.2.2.0` and start Jellyfin. Do not leave both plugin versions installed. Keep the existing plugin XML configuration and `<Jellyfin data>/autocert` directory. Select GoDaddy, choose **API key and secret**, enter both production values, save, and test DNS access. Use a staging issuance before relying on production renewal.
 
 Version 0.2.0 adds six tests for classic authentication, TXT value preservation, already-absent records, and unexpected name rejection (26 passing cases total). An isolated Jellyfin 12.1 check also verified classic credential saving, rejection of a partial pair, settings redaction, and delivery of the new fields. No live DNS credentials were used. Classic keys remain subject to GoDaddy account/API eligibility and its legacy API lifecycle.
 
 
 
 Version 0.2.1 fixes certificate status after restart: the page displays **Certificate Active** when HTTPS is enabled, Jellyfin reports HTTPS listening with no pending restart, and its certificate settings match a valid AutoCert PFX. Staging results and renewal errors remain visible. All 34 automated test cases pass.
+
+Version 0.2.2 removes duplicate activity/status text on the certificate status page while preserving distinct progress and error messages.
