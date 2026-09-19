@@ -4,7 +4,16 @@
 
 AutoCert obtains Let's Encrypt certificates using DNS verification, packages the private key and chain into a password-protected PFX, and updates Jellyfin's HTTPS settings. Each server owner supplies their own domain and DNS credentials through the plugin's configuration page.
 
-**Version 1.0.0.0 — stable release.** Built for Jellyfin **12.1.0 / .NET 10**. The release builds and passes automated tests and an isolated Jellyfin 12.1 startup/API smoke test. Live DNS issuance and automatic service restart have not been tested with provider accounts. Use staging before enabling production issuance.
+**Version 1.0.0.0 — stable release.** Built for Jellyfin **12.1.0 / .NET 10**.
+
+- Automatically issues and renews Let's Encrypt certificates using DNS verification.
+- Creates password-protected PFX files and updates Jellyfin's certificate path, password, and HTTPS setting.
+- Supports GoDaddy API key/secret or PAT, Cloudflare, and DigitalOcean.
+- Shows **Certificate Active** after restart when Jellyfin's HTTPS and certificate settings pass the status checks.
+- Automatically removes replaced AutoCert certificates after a five-day retention period.
+- Offers optional password rotation and automatic Jellyfin restart.
+
+[Latest release](https://github.com/aober420/Jellyfin-AutoCert/releases/latest) · [Manual installation download](https://github.com/aober420/Jellyfin-AutoCert/releases/download/v1.0.0.0/AutoCert-1.0.0.0-Manual-Install.zip)
 
 ## Providers
 
@@ -31,16 +40,29 @@ Requires Jellyfin 12.1 or later in the compatible 12.x series. Use staging mode 
 3. Save, open **Catalog**, select **AutoCert**, and install version **1.0.0.0**.
 4. Restart Jellyfin, then open **My Plugins > AutoCert** to configure your domain and DNS credentials.
 
-Release downloads are available at [GitHub Releases](https://github.com/aober420/Jellyfin-AutoCert/releases). `AutoCert_1.0.0.0.zip` is the catalog package: its DLLs are at the ZIP root because Jellyfin creates the plugin directory. `AutoCert-1.0.0.0-Manual-Install.zip` is the manual installation package described below.
+### Which download should I use?
+
+| File | Installation method |
+|---|---|
+| [AutoCert-1.0.0.0-Manual-Install.zip](https://github.com/aober420/Jellyfin-AutoCert/releases/download/v1.0.0.0/AutoCert-1.0.0.0-Manual-Install.zip) | Extract it and copy the enclosed `AutoCert_1.0.0.0` folder into Jellyfin's plugins directory. |
+| `AutoCert_1.0.0.0.zip` | Jellyfin downloads this automatically through the plugin catalog. Its files are at the ZIP root because Jellyfin creates the destination folder. |
+
+Both ZIPs contain the same plugin. If you use the repository, no manual download is needed. Matching `.sha256` files are available on the release page for download verification.
 
 ## Manual installation on Windows
 
-1. Extract the installation ZIP. It contains an `AutoCert_1.0.0.0` folder.
+1. Download and extract **AutoCert-1.0.0.0-Manual-Install.zip**. It contains an `AutoCert_1.0.0.0` folder.
 2. Find your actual Jellyfin data/plugins directory using the server's dashboard paths. A typical Windows service install uses `C:\ProgramData\Jellyfin\Server\plugins`, but portable/custom installations differ.
 3. Stop Jellyfin and copy the entire `AutoCert_1.0.0.0` folder into that plugins directory, including its dependency DLLs. Do not copy the source ZIP or `.cs` files there.
 4. Start Jellyfin. Open **Dashboard → Plugins → My Plugins → AutoCert**.
 
-The public catalog uses the repository URL above. Installing or upgrading requires a Jellyfin restart. Live DNS issuance has not yet been validated with provider accounts; start with staging.
+### Updating an existing installation
+
+For catalog installations, install the available AutoCert update through Jellyfin and restart the server. If an update does not appear immediately, refresh the catalog after GitHub's cache updates.
+
+For manual installations, stop Jellyfin, move the old AutoCert folder outside the plugins directory, and copy in `AutoCert_1.0.0.0`. Start Jellyfin afterward. Keep the plugin XML configuration and `<Jellyfin data>/autocert` directory: they contain your existing settings, protected credentials, and certificate state.
+
+If your repository entry uses the former `jellyfin-plugin-autocert` name, replace its URL with the `Jellyfin-AutoCert` URL above.
 
 ## First setup
 
@@ -63,7 +85,7 @@ Tokens can be created using your provider's developer dashboard. Do not enter yo
 - A new PFX is written to a unique file in `<Jellyfin data>/autocert`. The PFX is reopened and checked for a private key, the exact requested hostname, and validity before installation.
 - Jellyfin's certificate path, certificate password, and HTTPS-enabled setting are updated through its configuration manager. Existing port settings and the HTTPS-required setting are preserved.
 - Password rotation is on by default. Turning it off allows a saved or automatically generated fixed password. A changed fixed password takes effect on the next issuance.
-- Previous certificate settings and previous PFX files are retained. **Restore previous settings** restores the previous path/password/HTTPS setting and disables AutoCert. Restart afterward. It cannot restore an old certificate file that was deleted externally.
+- Previous certificate settings are saved for rollback. **Restore previous settings** restores the previous path/password/HTTPS setting and disables AutoCert. Restart afterward. Managed old PFX files are retained for five days as described below; rollback is unavailable after its certificate is deleted.
 - Auto-restart is off by default. Enabling it can interrupt playback. This uses Jellyfin's own restart mechanism; it does not install a Windows service or external restart helper.
 
 ## Credentials and recovery
@@ -74,7 +96,30 @@ DNS tokens, GoDaddy API key/secret pairs, ACME account keys, PFX passwords in pl
 
 The plugin runs only while Jellyfin runs. Moving to a different Windows service account requires re-entering credentials because of DPAPI. Preserve the key ring and encrypted state together when backing up. A provider request with an uncertain response, or a process crash at the moment a record is created, can leave an unused challenge TXT record; inspect that record if provider cleanup is reported as pending. Recorded cleanup is retried on the next enabled run.
 
-If HTTPS prevents access, use your existing local HTTP access, or stop Jellyfin and restore your saved network configuration. Keep a backup of the original network configuration before first production installation. Unused AutoCert PFX files are automatically deleted after a five-day retention period. The clock starts when a scheduled check first observes them unused after the production replacement is active. Cleanup runs every 12 hours, so deletion happens on the first check after five days. Existing old files receive a fresh five-day grace period on upgrade. The active production certificate, latest staging certificate, externally supplied files, and linked files are protected. Cleanup waits while a restart is pending or the active certificate cannot be validated. A rollback entry is removed when its old file is deleted.
+If HTTPS prevents access, use your existing local HTTP access, or stop Jellyfin and restore your saved network configuration. Keep a backup of the original network configuration before first production installation.
+
+## Certificate status
+
+After installation, the status asks you to restart Jellyfin to load the certificate. After restarting, it shows **Certificate Active** when:
+
+- Jellyfin reports HTTPS listening with no pending restart.
+- HTTPS is enabled and the configured PFX path and password match AutoCert's production certificate.
+- The PFX can be opened and has a private key, the correct hostname, and valid dates.
+
+The status displays matching activity and certificate messages only once. Domain, expiration, last attempt, and PFX path remain visible, along with any distinct progress, renewal error, or DNS cleanup message. These are local server checks, not an external connectivity test. Staging certificates keep their staging result because they are never installed into Jellyfin.
+
+## Automatic cleanup after five days
+
+AutoCert checks for unused certificates during its scheduled certificate check, normally every **12 hours**. The five-day clock begins when a check first observes an unused file while the production replacement passes the active-certificate checks. Deletion happens on the first check after those five days; it is not based on the file's creation date.
+
+- Cleanup only considers AutoCert's generated `certificate-<guid>.pfx` and `staging-<guid>.pfx` files directly inside `<Jellyfin data>/autocert`.
+- The current production certificate and latest staging certificate are retained. Externally supplied certificates and symbolic links are excluded.
+- Cleanup waits while Jellyfin reports a pending restart or the production certificate fails the active checks.
+- Old files already present when upgrading receive a new five-day grace period when first observed.
+- Reusing a certificate resets its retention clock. A rollback entry is removed when its old certificate is selected for deletion.
+- If a file cannot be deleted because of permissions or a file lock, cleanup retries on a later check.
+
+Cleanup can run even when automatic issuance is disabled, provided the managed production certificate still passes the active checks. Jellyfin must be running for scheduled checks to execute.
 
 ## Limitations
 
@@ -97,7 +142,7 @@ dotnet test .\tests\AutoCert.Tests.csproj -c Release
 
 The install folder needs `Jellyfin.Plugin.AutoCert.dll`, `Certes.dll`, `BouncyCastle.Crypto.dll`, and `Newtonsoft.Json.dll`. Do not ship Jellyfin's own framework assemblies; the running server provides those.
 
-Automated tests cover hostname/zone validation, short-lifetime renewal timing, invalid PFX rejection, provider TXT creation and exact-ID cleanup, response redaction, wrong-zone cleanup rejection, encrypted state persistence, staging isolation, production configuration updates, and rollback. The isolated Jellyfin smoke test verified plugin discovery, page delivery, settings saves, secret flags, task execution, anonymous HTTP 401, and non-admin HTTP 403. No live DNS records or certificates were created during development.
+The 36 automated test cases cover five-day retention boundaries, protected files, rollback expiry, reuse of certificates, cleanup gating, status after restart, hostname/zone validation, short-lifetime renewal timing, invalid PFX rejection, provider TXT creation and exact-ID cleanup, response redaction, wrong-zone cleanup rejection, encrypted state persistence, staging isolation, production configuration updates, and rollback. The isolated Jellyfin smoke test verified plugin discovery, page delivery, settings saves, secret flags, task execution, anonymous HTTP 401, and non-admin HTTP 403. No live DNS records or certificates were created during development.
 
 ## Extending provider support
 
@@ -114,16 +159,9 @@ Automated tests cover hostname/zone validation, short-lifetime renewal timing, i
 
 License: GPL-3.0-only for the plugin source. See `THIRD-PARTY-NOTICES.md` for bundled dependencies.
 
-## Upgrade from 0.1.0
+## Release history
 
-Stop Jellyfin. Move the old AutoCert plugin folder out of the plugins directory and keep it as a backup, then copy in `AutoCert_1.0.0.0` and start Jellyfin. Do not leave both plugin versions installed. Keep the existing plugin XML configuration and `<Jellyfin data>/autocert` directory. Select GoDaddy, choose **API key and secret**, enter both production values, save, and test DNS access. Use a staging issuance before relying on production renewal.
-
-Version 0.2.0 adds six tests for classic authentication, TXT value preservation, already-absent records, and unexpected name rejection (26 passing cases total). An isolated Jellyfin 12.1 check also verified classic credential saving, rejection of a partial pair, settings redaction, and delivery of the new fields. No live DNS credentials were used. Classic keys remain subject to GoDaddy account/API eligibility and its legacy API lifecycle.
-
-
-
-Version 0.2.1 fixes certificate status after restart: the page displays **Certificate Active** when HTTPS is enabled, Jellyfin reports HTTPS listening with no pending restart, and its certificate settings match a valid AutoCert PFX. Staging results and renewal errors remain visible. All 34 automated test cases pass.
-
-Version 0.2.2 removes duplicate activity/status text on the certificate status page while preserving distinct progress and error messages.
-
-Version 1.0.0.0 is the stable release and adds automatic five-day retention for replaced AutoCert certificates.
+- **1.0.0.0:** Stable release; automatic five-day retention and cleanup of replaced AutoCert certificates.
+- **0.2.2:** Removed duplicate certificate status text.
+- **0.2.1:** Added the Certificate Active status after restart.
+- **0.2.0:** Added GoDaddy API key and secret support alongside PAT authentication.
