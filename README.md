@@ -31,7 +31,7 @@ Requires Jellyfin 12.1 or later in the compatible 12.x series. Use staging mode 
 3. Save, open **Catalog**, select **AutoCert**, and install version **1.0.0.0**.
 4. Restart Jellyfin, then open **My Plugins > AutoCert** to configure your domain and DNS credentials.
 
-Release downloads are available at [GitHub Releases](https://github.com/aober420/Jellyfin-AutoCert/releases). `AutoCert_1.0.0.0.zip` is the catalog package: its DLLs are at the ZIP root because Jellyfin creates the plugin directory. `AutoCert-1.0.0-Jellyfin-12.1.zip` is the manual installation package described below.
+Release downloads are available at [GitHub Releases](https://github.com/aober420/Jellyfin-AutoCert/releases). `AutoCert_1.0.0.0.zip` is the catalog package: its DLLs are at the ZIP root because Jellyfin creates the plugin directory. `AutoCert-1.0.0.0-Manual-Install.zip` is the manual installation package described below.
 
 ## Manual installation on Windows
 
