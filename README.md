@@ -90,7 +90,7 @@ Tokens can be created using your provider's developer dashboard. Do not enter yo
 
 ## Security
 
-AutoCert includes security protections, but it has **not undergone a comprehensive security audit** and is not guaranteed free of vulnerabilities. The **stable** release label describes its release status, not a security certification. The 36 passing automated tests check specific behavior; they are not a substitute for a focused security review.
+AutoCert includes security protections, but it has **not undergone a comprehensive security audit** and is not guaranteed free of vulnerabilities. The **stable** release label describes its release status, not a security certification, they are not a substitute for a focused security review.
 
 ### Existing protections
 
