@@ -21,6 +21,7 @@ public class CertificateStatusTests
     [InlineData("password", false)]
     [InlineData("missing", false)]
     [InlineData("expired", false)]
+    [InlineData("expired-disabled", false)]
     [InlineData("staging", false)]
     public async Task StatusReflectsRestartAndCertificateSettings(string scenario, bool active)
     {
@@ -30,18 +31,18 @@ public class CertificateStatusTests
         paths.SetupGet(x => x.PluginsPath).Returns(Path.Combine(root, "plugins"));
         paths.SetupGet(x => x.PluginConfigurationsPath).Returns(Path.Combine(root, "config"));
         var plugin = new Plugin(paths.Object, Mock.Of<IXmlSerializer>());
-        var config = BehaviorTests.Config(); config.UseStaging = scenario == "staging";
+        var config = BehaviorTests.Config(); config.UseStaging = scenario == "staging"; config.Enabled = scenario != "expired-disabled";
         plugin.UpdateConfiguration(config);
         var store = new SecureStore(paths.Object);
         using var key = RSA.Create(2048);
         var request = new CertificateRequest("CN=" + config.Domain, key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         var names = new SubjectAlternativeNameBuilder(); names.AddDnsName(config.Domain);
         request.CertificateExtensions.Add(names.Build());
-        using var cert = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-2), DateTimeOffset.UtcNow.AddDays(scenario == "expired" ? -1 : 30));
+        using var cert = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-2), DateTimeOffset.UtcNow.AddDays(scenario.StartsWith("expired") ? -1 : 30));
         var path = Path.Combine(store.Root, "certificate.pfx");
         if (scenario != "missing") File.WriteAllBytes(path, cert.Export(X509ContentType.Pkcs12, "password"));
         const string installed = "Certificate installed in Jellyfin settings. Restart Jellyfin to load it.";
-        var state = new CertificateState { Domain = config.Domain, Path = path, Password = "password", RestartPending = true, Message = installed };
+        var state = new CertificateState { Domain = config.Domain, Path = path, Password = "password", RestartPending = true, Message = installed, NotAfter = cert.NotAfter.ToUniversalTime() };
         var stateKey = config.UseStaging ? "state-staging" : "state-production";
         store.Write(stateKey, state);
         var network = new Mock<IServerConfigurationManager>();
@@ -51,8 +52,8 @@ public class CertificateStatusTests
         host.SetupGet(x => x.HasPendingRestart).Returns(scenario == "pending");
         var manager = new CertificateManager(store, network.Object, host.Object, Mock.Of<ISystemManager>(), NullLogger<CertificateManager>.Instance);
         var status = JsonSerializer.SerializeToElement(manager.Status());
-        Assert.Equal(active ? "Certificate Active" : installed, status.GetProperty("message").GetString());
-        Assert.Equal(active ? "Certificate Active" : "Idle", status.GetProperty("activity").GetString());
+        Assert.Equal(active ? "Certificate Active" : scenario.StartsWith("expired") ? "Certificate expired" : installed, status.GetProperty("message").GetString());
+        Assert.Equal(active ? "Certificate Active" : scenario.StartsWith("expired") ? "Certificate expired" : "Idle", status.GetProperty("activity").GetString());
         // A successful restart must not erase a later renewal failure.
         state.Message = "Renewal failed"; store.Write(stateKey, state);
         Assert.Equal("Renewal failed", JsonSerializer.SerializeToElement(manager.Status()).GetProperty("message").GetString());
@@ -65,5 +66,6 @@ public class CertificateStatusTests
         config.Enabled = false; plugin.UpdateConfiguration(config);
         await manager.Run(new Progress<double>(), default);
         Assert.Equal(!active, File.Exists(retired));
+        if (scenario.StartsWith("expired")) Assert.Equal("Certificate expired", JsonSerializer.SerializeToElement(manager.Status()).GetProperty("activity").GetString());
     }
 }

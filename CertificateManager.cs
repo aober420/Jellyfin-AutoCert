@@ -45,9 +45,17 @@ public sealed class CertificateManager
     {
         var c = Plugin.Instance.Configuration;
         var state = _store.Read<CertificateState>(StateKey(c)) ?? new();
-        var active = !c.UseStaging && IsCertificateActive(state, c.Domain);
+        var expired = state.NotAfter != default && state.NotAfter <= DateTimeOffset.UtcNow;
+        var active = !expired && !c.UseStaging && IsCertificateActive(state, c.Domain);
         var message = active && state.Message == InstalledMessage ? "Certificate Active" : state.Message;
         var activity = active && _activity is "Idle" or "Complete" or "Certificate is current" ? "Certificate Active" : _activity;
+        if (expired)
+        {
+            if (_activity is "Idle" or "Complete" or "Certificate is current" or "Disabled") activity = "Certificate expired";
+            // Preserve errors and progress, but replace the obsolete restart instruction.
+            message = state.Message == InstalledMessage ? "Certificate expired" : state.Message;
+            if (activity != "Certificate expired" && message != "Certificate expired") message = "Certificate expired. " + message;
+        }
         return new { activity, domain = state.Domain, expires = state.NotAfter == default ? (DateTimeOffset?)null : state.NotAfter, lastAttempt = state.LastAttempt, message, path = state.Path, hasToken = !string.IsNullOrEmpty(_store.Get("token-" + SafeProvider(c.Provider))), hasClassicCredentials = !string.IsNullOrEmpty(_store.Get("godaddy-classic")), hasPassword = !string.IsNullOrEmpty(_store.Get("fixed-password")), pendingDnsCleanup = _store.Read<PendingDns>("pending-dns") != null, restartRequired = _host.HasPendingRestart, hasBackup = _store.Read<PreviousCertificate>("previous") != null };
     }
     // Derive display status without rewriting issuance state or hiding renewal failures.
