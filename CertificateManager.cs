@@ -108,6 +108,14 @@ public sealed class CertificateManager
         try
         {
             c = Clone(Plugin.Instance.Configuration);
+            var installed = _store.Read<CertificateState>("state-production");
+            if (installed != null && IsCertificateActive(installed, installed.Domain))
+            {
+                var staging = _store.Read<CertificateState>("state-staging");
+                try { CertificateRetention.Cleanup(_store, new[] { installed.Path, staging?.Path ?? "" }, DateTimeOffset.UtcNow); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                { _log.LogWarning("AutoCert could not clean up old certificates; it will retry on the next check."); }
+            }
             if (!c.Enabled) { _activity = "Disabled"; return; }
             Validation.Check(c);
             if (!c.AcceptTerms) throw new InvalidOperationException("Accept the Let's Encrypt subscriber agreement in settings before issuing.");

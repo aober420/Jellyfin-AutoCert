@@ -22,7 +22,7 @@ public class CertificateStatusTests
     [InlineData("missing", false)]
     [InlineData("expired", false)]
     [InlineData("staging", false)]
-    public void StatusReflectsRestartAndCertificateSettings(string scenario, bool active)
+    public async Task StatusReflectsRestartAndCertificateSettings(string scenario, bool active)
     {
         var root = Path.Combine(Path.GetTempPath(), "autocert-status-" + Guid.NewGuid().ToString("N"));
         var paths = new Mock<IApplicationPaths>();
@@ -59,5 +59,11 @@ public class CertificateStatusTests
         // Status polling never changes certificate configuration or stored issuance state.
         network.Verify(x => x.SaveConfiguration(It.IsAny<string>(), It.IsAny<object>()), Times.Never);
         Assert.True(store.Read<CertificateState>(stateKey)!.RestartPending);
+        var retired = Path.Combine(store.Root, "certificate-" + Guid.NewGuid().ToString("N") + ".pfx");
+        File.WriteAllText(retired, "old fixture");
+        store.Write("retired-certificates", new Dictionary<string, DateTimeOffset> { [retired] = DateTimeOffset.UtcNow.AddDays(-6) });
+        config.Enabled = false; plugin.UpdateConfiguration(config);
+        await manager.Run(new Progress<double>(), default);
+        Assert.Equal(!active, File.Exists(retired));
     }
 }
