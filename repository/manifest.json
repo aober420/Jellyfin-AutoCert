@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "0.2.2.0",
+        "changelog": "Removes duplicate Certificate Active text while preserving distinct activity and error messages.",
+        "targetAbi": "12.1.0.0",
+        "sourceUrl": "https://github.com/aober420/Jellyfin-AutoCert/releases/download/v0.2.2/AutoCert_0.2.2.0.zip",
+        "checksum": "66d6b386f7404a739b700c05f9e73251",
+        "timestamp": "2026-09-19T02:33:32Z"
+      },
+      {
         "version": "0.2.1.0",
         "changelog": "Shows Certificate Active after restart when HTTPS and valid AutoCert certificate settings match. Preserves staging results and renewal errors.",
         "targetAbi": "12.1.0.0",
