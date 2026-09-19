@@ -88,6 +88,27 @@ Tokens can be created using your provider's developer dashboard. Do not enter yo
 - Previous certificate settings are saved for rollback. **Restore previous settings** restores the previous path/password/HTTPS setting and disables AutoCert. Restart afterward. Managed old PFX files are retained for five days as described below; rollback is unavailable after its certificate is deleted.
 - Auto-restart is off by default. Enabling it can interrupt playback. This uses Jellyfin's own restart mechanism; it does not install a Windows service or external restart helper.
 
+## Security
+
+AutoCert includes security protections, but it has **not undergone a comprehensive security audit** and is not guaranteed free of vulnerabilities. The **stable** release label describes its release status, not a security certification. The 36 passing automated tests check specific behavior; they are not a substitute for a focused security review.
+
+### Existing protections
+
+- Stored DNS credentials and certificate passwords in plugin state are encrypted, with restricted access to the AutoCert data directory.
+- Plugin settings and status endpoints require Jellyfin administrator access. Credentials are not returned to the configuration page.
+- Generated PFX files are checked for a private key, the requested hostname, and valid dates before installation.
+- Automatic cleanup is restricted to AutoCert-generated filenames in its own directory and protects current production and staging certificates.
+
+### Remaining risks and precautions
+
+- AutoCert holds DNS credentials and certificate private keys. An attacker with sufficient access to Jellyfin, its service account, or the host may be able to use them; encryption at rest does not protect against a compromised running server.
+- Jellyfin stores the active PFX password in its network configuration. Protect the entire Jellyfin data/config directory and its backups, not just the PFX file.
+- Use narrowly scoped DNS credentials where the provider supports them, limited to the required zone and permissions. Revoke or rotate credentials if you suspect exposure.
+- Keep Jellyfin, AutoCert, and the operating system updated. Configure the plugin over a trusted local connection or existing HTTPS, and restrict administrator access.
+- Avoid running multiple certificate clients against the same DNS challenge name with GoDaddy classic authentication. Its read/modify/write API cannot prevent conflicting simultaneous updates.
+
+A focused security review is still needed. The storage and recovery details below explain the platform-specific protections and backup requirements.
+
 ## Credentials and recovery
 
 DNS tokens, GoDaddy API key/secret pairs, ACME account keys, PFX passwords in plugin state, DNS cleanup state, and rollback settings are encrypted with ASP.NET Data Protection. The AutoCert directory is restricted to the service account, SYSTEM, and Administrators on Windows; Windows DPAPI protects the key ring for the current account. On other systems the directory is owner-only, but the data-protection key ring relies on filesystem permissions. Linux has not been smoke-tested in this release.
