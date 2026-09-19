@@ -39,11 +39,32 @@ public sealed class CertificateManager
     public CertificateManager(SecureStore store, IServerConfigurationManager network, IServerApplicationHost host, ISystemManager system, ILogger<CertificateManager> log)
     { _store = store; _network = network; _host = host; _system = system; _log = log; }
 
+    private const string InstalledMessage = "Certificate installed in Jellyfin settings. Restart Jellyfin to load it.";
+
     public object Status()
     {
         var c = Plugin.Instance.Configuration;
         var state = _store.Read<CertificateState>(StateKey(c)) ?? new();
-        return new { activity = _activity, domain = state.Domain, expires = state.NotAfter == default ? (DateTimeOffset?)null : state.NotAfter, lastAttempt = state.LastAttempt, message = state.Message, path = state.Path, hasToken = !string.IsNullOrEmpty(_store.Get("token-" + SafeProvider(c.Provider))), hasClassicCredentials = !string.IsNullOrEmpty(_store.Get("godaddy-classic")), hasPassword = !string.IsNullOrEmpty(_store.Get("fixed-password")), pendingDnsCleanup = _store.Read<PendingDns>("pending-dns") != null, restartRequired = _host.HasPendingRestart, hasBackup = _store.Read<PreviousCertificate>("previous") != null };
+        var active = !c.UseStaging && IsCertificateActive(state, c.Domain);
+        var message = active && state.Message == InstalledMessage ? "Certificate Active" : state.Message;
+        var activity = active && _activity is "Idle" or "Complete" or "Certificate is current" ? "Certificate Active" : _activity;
+        return new { activity, domain = state.Domain, expires = state.NotAfter == default ? (DateTimeOffset?)null : state.NotAfter, lastAttempt = state.LastAttempt, message, path = state.Path, hasToken = !string.IsNullOrEmpty(_store.Get("token-" + SafeProvider(c.Provider))), hasClassicCredentials = !string.IsNullOrEmpty(_store.Get("godaddy-classic")), hasPassword = !string.IsNullOrEmpty(_store.Get("fixed-password")), pendingDnsCleanup = _store.Read<PendingDns>("pending-dns") != null, restartRequired = _host.HasPendingRestart, hasBackup = _store.Read<PreviousCertificate>("previous") != null };
+    }
+    // Derive display status without rewriting issuance state or hiding renewal failures.
+    private bool IsCertificateActive(CertificateState state, string domain)
+    {
+        if (_host.HasPendingRestart || !_host.ListenWithHttps || state.Domain != domain || string.IsNullOrEmpty(state.Path)) return false;
+        var current = _network.GetConfiguration<NetworkConfiguration>("network");
+        if (!current.EnableHttps || current.CertificatePath != state.Path || current.CertificatePassword != state.Password) return false;
+        try
+        {
+            using var certificate = Validation.CheckPfx(File.ReadAllBytes(state.Path), state.Password, domain);
+            return certificate.NotBefore.ToUniversalTime() <= DateTime.UtcNow;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or CryptographicException or InvalidOperationException)
+        {
+            return false;
+        }
     }
     private static string SafeProvider(string provider) => Validation.Providers.Contains(provider) ? provider : throw new InvalidOperationException("Unsupported DNS provider.");
     private static string StateKey(PluginConfiguration c) => c.UseStaging ? "state-staging" : "state-production";
@@ -182,7 +203,7 @@ public sealed class CertificateManager
             if (!c.UseStaging)
             {
                 Apply(state);
-                state.Message = "Certificate installed in Jellyfin settings. Restart Jellyfin to load it.";
+                state.Message = InstalledMessage;
                 _store.Write(StateKey(c), state);
             }
             progress.Report(100);
