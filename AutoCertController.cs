@@ -37,6 +37,8 @@ public sealed class AutoCertController(CertificateManager manager, ITaskManager 
     }
     [HttpPost("check")]
     public IActionResult Check() { tasks.QueueIfNotRunning<RenewalTask>(); return Accepted(); }
+    [HttpPost("issue-now")]
+    public IActionResult IssueNow() { tasks.QueueIfNotRunning<ManualIssuanceTask>(); return Accepted(); }
     [HttpPost("rollback")]
     public async Task<IActionResult> Rollback(CancellationToken ct)
     {

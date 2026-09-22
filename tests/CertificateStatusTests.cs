@@ -66,6 +66,12 @@ public class CertificateStatusTests
         config.Enabled = false; plugin.UpdateConfiguration(config);
         await manager.Run(new Progress<double>(), default);
         Assert.Equal(!active, File.Exists(retired));
-        if (scenario.StartsWith("expired")) Assert.Equal("Certificate expired", JsonSerializer.SerializeToElement(manager.Status()).GetProperty("activity").GetString());
+        // Forced issuance bypasses both disabled automation and a current certificate,
+        // but still stops at the cooldown before touching the DNS provider.
+        state.LastAttempt = DateTimeOffset.UtcNow;
+        store.Write(stateKey, state);
+        var cooldown = await Assert.ThrowsAsync<InvalidOperationException>(() => manager.Run(new Progress<double>(), default, force: true));
+        Assert.Contains("six hours", cooldown.Message);
+
     }
 }

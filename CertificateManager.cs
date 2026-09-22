@@ -108,9 +108,13 @@ public sealed class CertificateManager
         ? _store.Get("godaddy-classic") ?? throw new InvalidOperationException("Save your GoDaddy production API key and secret first.")
         : _store.Get("token-" + SafeProvider(c.Provider)) ?? throw new InvalidOperationException("Save an API token for this DNS provider first.");
 
-    public async Task Run(IProgress<double> progress, CancellationToken ct)
+    public async Task Run(IProgress<double> progress, CancellationToken ct, bool force = false)
     {
-        if (!await _gate.WaitAsync(0, ct)) return;
+        if (!await _gate.WaitAsync(0, ct))
+        {
+            if (force) throw new InvalidOperationException("A certificate operation is already running. Wait for it to finish before issuing again.");
+            return;
+        }
         CertificateState? state = null;
         PluginConfiguration? c = null;
         try
@@ -124,13 +128,13 @@ public sealed class CertificateManager
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 { _log.LogWarning("AutoCert could not clean up old certificates; it will retry on the next check."); }
             }
-            if (!c.Enabled) { _activity = "Disabled"; return; }
+            if (!c.Enabled && !force) { _activity = "Disabled"; return; }
             Validation.Check(c);
             if (!c.AcceptTerms) throw new InvalidOperationException("Accept the Let's Encrypt subscriber agreement in settings before issuing.");
             _activity = "Cleaning up any previous verification record";
             await Cleanup();
             state = _store.Read<CertificateState>(StateKey(c)) ?? new();
-            if (state.Domain == c.Domain && File.Exists(state.Path))
+            if (!force && state.Domain == c.Domain && File.Exists(state.Path))
             {
                 using var existing = X509CertificateLoader.LoadPkcs12FromFile(state.Path, state.Password, X509KeyStorageFlags.EphemeralKeySet);
                 if (existing.HasPrivateKey && existing.MatchesHostname(c.Domain, false, false) && !Validation.Due(DateTimeOffset.UtcNow, existing.NotBefore.ToUniversalTime(), existing.NotAfter.ToUniversalTime(), c.RenewBeforeDays))

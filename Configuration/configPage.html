@@ -35,6 +35,8 @@
   <div id="status" role="status" aria-live="polite" style="white-space:pre-wrap;margin-bottom:1em">Loading...</div>
   <div style="display:flex;flex-wrap:wrap;gap:.6em">
    <button is="emby-button" id="test" type="button" class="raised">Test DNS access</button>
+   <button is="emby-button" id="issueNow" type="button" class="raised">Issue new certificate now</button>
+   <p class="fieldDescription">Uses saved settings and issues even when automatic management is disabled or renewal is not due. The six-hour issuance cooldown and CA rate limits still apply. Staging creates a test certificate only.</p>
    <button is="emby-button" id="check" type="button" class="raised">Check / issue certificate</button>
    <button is="emby-button" id="refresh" type="button" class="raised">Refresh status</button>
    <button is="emby-button" id="rollback" type="button" class="raised">Restore previous settings</button>
@@ -106,6 +108,7 @@
    try { await request('settings', 'POST', { settings, token: el('token').value, password: el('password').value, apiKey: el('apiKey').value, apiSecret: el('apiSecret').value }); savedProvider = settings.provider; el('token').value = ''; el('password').value = ''; el('apiKey').value = ''; el('apiSecret').value = ''; el('notice').textContent = 'Settings saved.'; await refresh(); } catch (err) { await error(err); }
   });
   el('test').addEventListener('click', async function () { el('test').disabled = true; try { const r = await request('test', 'POST', undefined, true); el('notice').textContent = r.message; } catch (err) { await error(err); } finally { el('test').disabled = false; } });
+  el('issueNow').addEventListener('click', async function () { if (!window.confirm('Issue a new certificate using saved settings? This replaces the production certificate after successful issuance, or creates a test certificate if staging is enabled. The six-hour cooldown still applies.')) return; el('issueNow').disabled = true; try { await request('issue-now', 'POST'); el('notice').textContent = 'Manual issuance queued. Status refreshes automatically; check the result for any cooldown or issuance errors.'; await refresh(); } catch (err) { await error(err); } finally { el('issueNow').disabled = false; } });
   el('check').addEventListener('click', async function () { try { await request('check', 'POST'); el('notice').textContent = 'Certificate check queued. Status refreshes automatically. Initial DNS verification can take several minutes.'; await refresh(); } catch (err) { await error(err); } });
   el('refresh').addEventListener('click', () => refresh().catch(error));
   el('rollback').addEventListener('click', async function () { if (!window.confirm('Restore the previous certificate settings and disable AutoCert? Restart Jellyfin afterward to apply.')) return; try { await request('rollback', 'POST'); await load(); } catch (err) { await error(err); } });
