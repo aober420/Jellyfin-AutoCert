@@ -56,7 +56,7 @@ public sealed class CertificateManager
             message = state.Message == InstalledMessage ? "Certificate expired" : state.Message;
             if (activity != "Certificate expired" && message != "Certificate expired") message = "Certificate expired. " + message;
         }
-        return new { activity, domain = state.Domain, expires = state.NotAfter == default ? (DateTimeOffset?)null : state.NotAfter, lastAttempt = state.LastAttempt, message, path = state.Path, hasToken = !string.IsNullOrEmpty(_store.Get("token-" + SafeProvider(c.Provider))), hasClassicCredentials = !string.IsNullOrEmpty(_store.Get("godaddy-classic")), hasPassword = !string.IsNullOrEmpty(_store.Get("fixed-password")), pendingDnsCleanup = _store.Read<PendingDns>("pending-dns") != null, restartRequired = _host.HasPendingRestart, hasBackup = _store.Read<PreviousCertificate>("previous") != null };
+        return new { activity, domain = state.Domain, issued = state.NotBefore == default ? (DateTimeOffset?)null : state.NotBefore, expires = state.NotAfter == default ? (DateTimeOffset?)null : state.NotAfter, lastAttempt = state.LastAttempt, message, path = state.Path, hasToken = !string.IsNullOrEmpty(_store.Get("token-" + SafeProvider(c.Provider))), hasClassicCredentials = !string.IsNullOrEmpty(_store.Get("godaddy-classic")), hasPassword = !string.IsNullOrEmpty(_store.Get("fixed-password")), pendingDnsCleanup = _store.Read<PendingDns>("pending-dns") != null, restartRequired = _host.HasPendingRestart, hasBackup = _store.Read<PreviousCertificate>("previous") != null };
     }
     // Derive display status without rewriting issuance state or hiding renewal failures.
     private bool IsCertificateActive(CertificateState state, string domain)

@@ -4,7 +4,7 @@
 
 AutoCert obtains Let's Encrypt certificates using DNS verification, packages the private key and chain into a password-protected PFX, and updates Jellyfin's HTTPS settings. Each server owner supplies their own domain and DNS credentials through the plugin's configuration page.
 
-**Version 1.0.1.0 — stable release.** Built for Jellyfin **12.1.0 / .NET 10**.
+**Version 1.0.2.0 — stable release.** Built for Jellyfin **12.1.0 / .NET 10**.
 
 - Automatically issues and renews Let's Encrypt certificates using DNS verification.
 - Creates password-protected PFX files and updates Jellyfin's certificate path, password, and HTTPS setting.
@@ -13,7 +13,7 @@ AutoCert obtains Let's Encrypt certificates using DNS verification, packages the
 - Automatically removes replaced AutoCert certificates after a five-day retention period.
 - Offers optional password rotation and automatic Jellyfin restart.
 
-[Latest release](https://github.com/aober420/Jellyfin-AutoCert/releases/latest) · [Manual installation download](https://github.com/aober420/Jellyfin-AutoCert/releases/download/v1.0.1.0/AutoCert-1.0.1.0-Manual-Install.zip)
+[Latest release](https://github.com/aober420/Jellyfin-AutoCert/releases/latest) · [Manual installation download](https://github.com/aober420/Jellyfin-AutoCert/releases/download/v1.0.2.0/AutoCert-1.0.2.0-Manual-Install.zip)
 
 ## Providers
 
@@ -37,30 +37,30 @@ Requires Jellyfin 12.1 or later in the compatible 12.x series. Use staging mode 
    https://raw.githubusercontent.com/aober420/Jellyfin-AutoCert/main/repository/manifest.json
    ```
 
-3. Save, open **Catalog**, select **AutoCert**, and install version **1.0.1.0**.
+3. Save, open **Catalog**, select **AutoCert**, and install version **1.0.2.0**.
 4. Restart Jellyfin, then open **My Plugins > AutoCert** to configure your domain and DNS credentials.
 
 ### Which download should I use?
 
 | File | Installation method |
 |---|---|
-| [AutoCert-1.0.1.0-Manual-Install.zip](https://github.com/aober420/Jellyfin-AutoCert/releases/download/v1.0.1.0/AutoCert-1.0.1.0-Manual-Install.zip) | Extract it and copy the enclosed `AutoCert_1.0.1.0` folder into Jellyfin's plugins directory. |
-| `AutoCert_1.0.1.0.zip` | Jellyfin downloads this automatically through the plugin catalog. Its files are at the ZIP root because Jellyfin creates the destination folder. |
+| [AutoCert-1.0.2.0-Manual-Install.zip](https://github.com/aober420/Jellyfin-AutoCert/releases/download/v1.0.2.0/AutoCert-1.0.2.0-Manual-Install.zip) | Extract it and copy the enclosed `AutoCert_1.0.2.0` folder into Jellyfin's plugins directory. |
+| `AutoCert_1.0.2.0.zip` | Jellyfin downloads this automatically through the plugin catalog. Its files are at the ZIP root because Jellyfin creates the destination folder. |
 
 Both ZIPs contain the same plugin. If you use the repository, no manual download is needed. Matching `.sha256` files are available on the release page for download verification.
 
 ## Manual installation on Windows
 
-1. Download and extract **AutoCert-1.0.1.0-Manual-Install.zip**. It contains an `AutoCert_1.0.1.0` folder.
+1. Download and extract **AutoCert-1.0.2.0-Manual-Install.zip**. It contains an `AutoCert_1.0.2.0` folder.
 2. Find your actual Jellyfin data/plugins directory using the server's dashboard paths. A typical Windows service install uses `C:\ProgramData\Jellyfin\Server\plugins`, but portable/custom installations differ.
-3. Stop Jellyfin and copy the entire `AutoCert_1.0.1.0` folder into that plugins directory, including its dependency DLLs. Do not copy the source ZIP or `.cs` files there.
+3. Stop Jellyfin and copy the entire `AutoCert_1.0.2.0` folder into that plugins directory, including its dependency DLLs. Do not copy the source ZIP or `.cs` files there.
 4. Start Jellyfin. Open **Dashboard → Plugins → My Plugins → AutoCert**.
 
 ### Updating an existing installation
 
 For catalog installations, install the available AutoCert update through Jellyfin and restart the server. If an update does not appear immediately, refresh the catalog after GitHub's cache updates.
 
-For manual installations, stop Jellyfin, move the old AutoCert folder outside the plugins directory, and copy in `AutoCert_1.0.1.0`. Start Jellyfin afterward. Keep the plugin XML configuration and `<Jellyfin data>/autocert` directory: they contain your existing settings, protected credentials, and certificate state.
+For manual installations, stop Jellyfin, move the old AutoCert folder outside the plugins directory, and copy in `AutoCert_1.0.2.0`. Start Jellyfin afterward. Keep the plugin XML configuration and `<Jellyfin data>/autocert` directory: they contain your existing settings, protected credentials, and certificate state.
 
 If your repository entry uses the former `jellyfin-plugin-autocert` name, replace its URL with the `Jellyfin-AutoCert` URL above.
 
@@ -121,13 +121,15 @@ If HTTPS prevents access, use your existing local HTTP access, or stop Jellyfin 
 
 ## Certificate status
 
+**Issued** shows the certificate validity start date in your local time, rather than the time of the last issuance attempt. The configuration page also includes a **GitHub repository** link to this project.
+
 After installation, the status asks you to restart Jellyfin to load the certificate. After restarting, it shows **Certificate Active** when:
 
 - Jellyfin reports HTTPS listening with no pending restart.
 - HTTPS is enabled and the configured PFX path and password match AutoCert's production certificate.
 - The PFX can be opened and has a private key, the correct hostname, and valid dates.
 
-The status displays matching activity and certificate messages only once. Domain, expiration, last attempt, and PFX path remain visible, along with any distinct progress, renewal error, or DNS cleanup message. These are local server checks, not an external connectivity test. Staging certificates keep their staging result because they are never installed into Jellyfin.
+The status displays matching activity and certificate messages only once. Domain, issued date, expiration, last attempt, and PFX path remain visible, along with any distinct progress, renewal error, or DNS cleanup message. These are local server checks, not an external connectivity test. Staging certificates keep their staging result because they are never installed into Jellyfin.
 
 ## Automatic cleanup after five days
 
@@ -184,6 +186,7 @@ The status page shows **Certificate expired** once the saved certificate expirat
 
 ## Release history
 
+- **1.0.2.0:** Added the certificate Issued date and a GitHub repository link on the configuration page.
 - **1.0.1.0:** Added explicit expired-certificate status, including when automatic management is disabled.
 - **1.0.0.0:** Stable release; automatic five-day retention and cleanup of replaced AutoCert certificates.
 - **0.2.2:** Removed duplicate certificate status text.

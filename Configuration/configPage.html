@@ -3,6 +3,7 @@
 <div id="AutoCertPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
  <div data-role="content"><div class="content-primary" style="max-width:58em">
   <h1>AutoCert</h1>
+  <p><a class="button-link" href="https://github.com/aober420/Jellyfin-AutoCert" target="_blank" rel="noopener noreferrer">GitHub repository</a></p>
   <p>Automatic Let's Encrypt certificates for Jellyfin. Choose the service that hosts your DNS records, which may differ from your domain registrar.</p>
   <form id="autoCertForm">
    <label class="checkboxContainer"><input is="emby-checkbox" id="enabled" type="checkbox"><span>Enable automatic certificate management</span></label>
@@ -78,7 +79,7 @@
   function passwordChanged() { el('passwordFields').hidden = el('rotatePassword').checked; }
   async function refresh() {
    const s = await request('status');
-   el('status').textContent = [s.activity, s.message !== s.activity ? s.message : '', s.domain ? 'Domain: ' + s.domain : '', s.expires ? 'Expires: ' + new Date(s.expires).toLocaleString() : '', s.lastAttempt ? 'Last attempt: ' + new Date(s.lastAttempt).toLocaleString() : '', s.path ? 'PFX: ' + s.path : '', s.pendingDnsCleanup ? 'DNS cleanup is pending; the next enabled run will retry it.' : '', s.restartRequired ? 'Jellyfin reports a restart is required.' : ''].filter(Boolean).join('\n');
+   el('status').textContent = [s.activity, s.message !== s.activity ? s.message : '', s.domain ? 'Domain: ' + s.domain : '', s.issued ? 'Issued: ' + new Date(s.issued).toLocaleString() : '', s.expires ? 'Expires: ' + new Date(s.expires).toLocaleString() : '', s.lastAttempt ? 'Last attempt: ' + new Date(s.lastAttempt).toLocaleString() : '', s.path ? 'PFX: ' + s.path : '', s.pendingDnsCleanup ? 'DNS cleanup is pending; the next enabled run will retry it.' : '', s.restartRequired ? 'Jellyfin reports a restart is required.' : ''].filter(Boolean).join('\n');
    el('rollback').disabled = !s.hasBackup;
    if (el('provider').value === savedProvider) el('tokenStatus').textContent = (el('provider').value === 'GoDaddy' && el('goDaddyAuthMode').value === 'Classic') ? (s.hasClassicCredentials ? 'An API key and secret pair is saved.' : 'No API key and secret pair saved.') : (s.hasToken ? 'A token is saved for this provider.' : 'No token saved for this provider.');
   }
