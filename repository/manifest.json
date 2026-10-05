@@ -9,7 +9,7 @@
     "versions": [
       {
         "version": "1.0.3.0",
-        "changelog": "Adds Issue new certificate now, bypassing the renewal window and disabled automation while retaining the six-hour cooldown.",
+        "changelog": "## ✨ New Features\n\n- **Issue a certificate now:** Request a new certificate before renewal is due, even when automatic management is disabled. Save your settings first; the button uses your saved staging/production and restart settings.\n\n## 🎨 Improvements\n\n- **Issuance limits:** Manual requests retain the six-hour cooldown and certificate authority rate limits.",
         "targetAbi": "12.1.0.0",
         "sourceUrl": "https://github.com/aober420/Jellyfin-AutoCert/releases/download/v1.0.3.0/AutoCert_1.0.3.0.zip",
         "checksum": "25dd9fd4850d75663b52f9fc71e47df3",
@@ -17,7 +17,7 @@
       },
       {
         "version": "1.0.2.0",
-        "changelog": "Adds certificate Issued date and a GitHub repository link on the configuration page.",
+        "changelog": "## ✨ New Features\n\n- **Certificate issued date:** Show the certificate validity start date in your local time.\n- **Repository link:** Open the GitHub repository from the top of the plugin configuration page.",
         "targetAbi": "12.1.0.0",
         "sourceUrl": "https://github.com/aober420/Jellyfin-AutoCert/releases/download/v1.0.2.0/AutoCert_1.0.2.0.zip",
         "checksum": "d05a70b01bc9326a607758065ef8e071",
@@ -25,7 +25,7 @@
       },
       {
         "version": "1.0.1.0",
-        "changelog": "Shows Certificate expired when the saved certificate expires, including with automatic management disabled. Preserves renewal errors.",
+        "changelog": "## 🐛 Bug Fixes\n\n- **Expired certificate status:** Resolved an issue where certificate status could remain outdated after expiration, including when automatic management was disabled.\n- **Status messages:** Keep renewal errors visible and replace obsolete restart instructions.",
         "targetAbi": "12.1.0.0",
         "sourceUrl": "https://github.com/aober420/Jellyfin-AutoCert/releases/download/v1.0.1.0/AutoCert_1.0.1.0.zip",
         "checksum": "d25ba92f23469c7d2125b6be197f97bd",
@@ -33,7 +33,7 @@
       },
       {
         "version": "1.0.0.0",
-        "changelog": "Stable release. Automatically removes unused AutoCert certificates after five days with the replacement active; protects current certificates and expires deleted rollback entries.",
+        "changelog": "## ✨ New Features\n\n- **Certificate cleanup:** Retain replaced AutoCert certificates for five days after first observing them unused with the replacement active, then remove them at the next scheduled 12-hour check.\n\n## 🎨 Improvements\n\n- **Protected certificates:** Keep the active production certificate, latest staging certificate, and externally supplied files. Cleanup waits for any pending restart.\n- **Upgrade grace period:** Give existing old files a fresh five-day grace period when upgrading. Rollback to a deleted certificate is no longer available.\n- **Stable release:** AutoCert 1.0.0.0 is now a regular release.",
         "targetAbi": "12.1.0.0",
         "sourceUrl": "https://github.com/aober420/Jellyfin-AutoCert/releases/download/v1.0.0.0/AutoCert_1.0.0.0.zip",
         "checksum": "222ddf2691e2b4983c31682db0782735",
@@ -41,7 +41,7 @@
       },
       {
         "version": "0.2.2.0",
-        "changelog": "Removes duplicate Certificate Active text while preserving distinct activity and error messages.",
+        "changelog": "## 🐛 Bug Fixes\n\n- **Duplicate status text:** Resolved an issue where Certificate Active appeared twice when activity and certificate status matched. Distinct progress and error messages remain visible.",
         "targetAbi": "12.1.0.0",
         "sourceUrl": "https://github.com/aober420/Jellyfin-AutoCert/releases/download/v0.2.2/AutoCert_0.2.2.0.zip",
         "checksum": "66d6b386f7404a739b700c05f9e73251",
@@ -49,7 +49,7 @@
       },
       {
         "version": "0.2.1.0",
-        "changelog": "Shows Certificate Active after restart when HTTPS and valid AutoCert certificate settings match. Preserves staging results and renewal errors.",
+        "changelog": "## 🐛 Bug Fixes\n\n- **Status after restart:** Resolved a stale restart message. Show Certificate Active when Jellyfin reports HTTPS listening, no restart is pending, certificate settings match, and the AutoCert PFX is valid.\n\n## 🎨 Improvements\n\n- **Error visibility:** Preserve staging messages and renewal failures.",
         "targetAbi": "12.1.0.0",
         "sourceUrl": "https://github.com/aober420/Jellyfin-AutoCert/releases/download/v0.2.1/AutoCert_0.2.1.0.zip",
         "checksum": "933efb8a15ea94fafd9b1aed090230d7",
@@ -57,7 +57,7 @@
       },
       {
         "version": "0.2.0.0",
-        "changelog": "Adds GoDaddy classic API key and secret authentication. Includes automatic renewal, PFX password rotation, optional restart, and rollback.",
+        "changelog": "## ✨ New Features\n\n- **GoDaddy authentication:** Use a classic API key and secret alongside the existing GoDaddy PAT, Cloudflare, and DigitalOcean options.\n- **HTTPS management:** DNS verification, automatic renewal, password-protected PFX creation, password rotation, Jellyfin HTTPS configuration updates, optional restart, and rollback.",
         "targetAbi": "12.1.0.0",
         "sourceUrl": "https://github.com/aober420/Jellyfin-AutoCert/releases/download/v0.2.0/AutoCert_0.2.0.0.zip",
         "checksum": "285cdf92e985106dccfa7795e85e234e",
